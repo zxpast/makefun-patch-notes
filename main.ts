@@ -41,6 +41,8 @@ const LINE =
 const DEST = join(OUTPUT_DIR, 'entry.txt');
 
 // Gate: 1-160 characters, not only whitespace (the sealed scorer's rule).
+// Counted by code point, not UTF-16 unit, so the count matches the scorer's
+// length check even if a future line used a non-ASCII character.
 const chars = [...LINE].length;
 if (chars < 1 || chars > 160 || LINE.trim().length === 0) {
   console.error(`entry line must be 1-160 characters (got ${chars})`);
@@ -56,7 +58,9 @@ try {
 }
 
 // Read the file back: the gate reads exactly these bytes, so a short or
-// mangled write must fail here rather than ship a broken entry.
+// mangled write must fail here rather than ship a broken entry. The check
+// compares the whole file, trailing newline included, against the exact
+// line the gate was given — a partial flush or a stray extra byte fails.
 let back: string;
 try {
   back = readFileSync(DEST, 'utf8');
